@@ -15,7 +15,7 @@ function SignInForm() {
   const { signIn } = useAuthActions();
   const devPasswordEnabled = import.meta.env.VITE_ENABLE_DEV_PASSWORD_AUTH === "true";
   const devEmailDefault =
-    import.meta.env.VITE_DEV_PASSWORD_AUTH_EMAIL || "test@neonthesis.local";
+    import.meta.env.VITE_DEV_PASSWORD_AUTH_EMAIL || "test@example.local";
   const devPasswordDefault =
     import.meta.env.VITE_DEV_PASSWORD_AUTH_PASSWORD || "TestUser2026#Secure!";
 
@@ -129,7 +129,7 @@ function SignInForm() {
       <div className="min-h-screen flex items-center justify-center bg-muted px-6">
         <div className="w-full max-w-sm space-y-6">
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-semibold">Sign in to Neon Thesis</h1>
+            <h1 className="text-2xl font-semibold">Sign in</h1>
             <p className="text-muted-foreground">
               Enter your email to receive a verification code.
             </p>
