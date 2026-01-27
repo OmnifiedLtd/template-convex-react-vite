@@ -178,6 +178,45 @@ VITE_CONVEX_URL=https://your-production-deployment.convex.cloud
 # VITE_SENTRY_DSN=your-production-sentry-dsn (optional)
 ```
 
+## Convex Auth Setup
+
+Convex Auth requires several environment variables to function. Run this command to auto-generate and set them:
+
+```bash
+npx @convex-dev/auth
+```
+
+This sets up:
+- `JWT_PRIVATE_KEY` - Required for signing authentication tokens
+- `JWKS` - JSON Web Key Set for token verification
+- `SITE_URL` - Frontend URL for auth callbacks
+
+### Dev Password Auth Configuration
+
+Dev password authentication requires **two separate environment variables**:
+
+| Variable | Location | Purpose |
+|----------|----------|---------|
+| `VITE_ENABLE_DEV_PASSWORD_AUTH=true` | `.env.local` (frontend) | Shows the dev password form on the auth page |
+| `ENABLE_DEV_PASSWORD_AUTH=true` | Convex Dashboard | Enables the dev-password auth provider in the backend |
+
+Both must be set for dev password auth to work. Set the Convex env var with:
+
+```bash
+npx convex env set ENABLE_DEV_PASSWORD_AUTH true
+```
+
+### Credential Matching
+
+The dev password credentials must match between frontend and backend:
+
+- Frontend defaults are in `apps/app/src/pages/Auth.tsx`
+- Backend defaults are in `convex/auth.ts`
+
+To customize, set these Convex environment variables:
+- `DEV_PASSWORD_AUTH_EMAIL` - Must match the email used in the frontend form
+- `DEV_PASSWORD_AUTH_PASSWORD` - Must match the password used in the frontend form
+
 ## Development Testing
 
 For local development, authentication uses Convex Auth with Resend OTP. During testing:

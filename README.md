@@ -113,12 +113,34 @@ SITE_URL=http://localhost:5173  # Local dev
 
 This template uses Convex Auth with Resend OTP for passwordless email authentication.
 
+### Initial Auth Setup
+
+Convex Auth requires JWT keys to be configured. Run this command to auto-generate and set them:
+
+```bash
+npx @convex-dev/auth
+```
+
+This sets up `JWT_PRIVATE_KEY`, `JWKS`, and `SITE_URL` environment variables in your Convex deployment.
+
 ### Dev Password Auth (Optional)
 
-When `VITE_ENABLE_DEV_PASSWORD_AUTH=true` is set, a dev password sign-in option appears with default credentials:
+Dev password auth requires **two environment variables** (frontend and backend):
 
-- Email: `test@your-app.local`
-- Password: `TestUserabc123#Secure!`
+1. **Frontend** (`.env.local`):
+   ```bash
+   VITE_ENABLE_DEV_PASSWORD_AUTH=true
+   ```
+
+2. **Backend** (Convex):
+   ```bash
+   npx convex env set ENABLE_DEV_PASSWORD_AUTH true
+   ```
+
+When both are set, a dev password sign-in option appears with default credentials:
+
+- Email: `test@example.local`
+- Password: `TestUser2026#Secure!`
 
 This bypasses the OTP email flow for local development.
 
