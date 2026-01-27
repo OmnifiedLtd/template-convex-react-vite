@@ -280,7 +280,7 @@ function AuthenticatedRedirect() {
 
   const from =
     (location.state as { from?: { pathname: string } })?.from?.pathname ||
-    "/dashboard";
+    "/";
 
   useEffect(() => {
     console.log("[Auth Debug] User authenticated, redirecting to:", from);
