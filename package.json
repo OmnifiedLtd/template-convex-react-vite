@@ -1,0 +1,28 @@
+{
+  "name": "full-stack-template",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:backend & npm run dev:app",
+    "dev:app": "npm run dev --workspace=app",
+    "dev:backend": "convex dev",
+    "dev:restart": "lsof -ti:5173,5174,5175 | xargs kill -9 2>/dev/null; npm run dev",
+    "build": "npm run build --workspaces --if-present",
+    "build:app": "npm run build --workspace=app",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npx convex typecheck && cd apps/app && npx tsc --noEmit"
+  },
+  "dependencies": {
+    "@auth/core": "^0.37.4",
+    "@convex-dev/auth": "^0.0.90",
+    "convex": "^1.31.4",
+    "resend": "^6.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10"
+  }
+}
