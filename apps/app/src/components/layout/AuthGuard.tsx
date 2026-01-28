@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/react"
 import { useEffect, useRef } from "react"
 import { Navigate, useLocation } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
@@ -29,13 +28,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
       }
       console.log("[Auth Debug] AuthGuard state transition", transitionData)
 
-      Sentry.addBreadcrumb({
-        category: "auth",
-        message: "AuthGuard state transition",
-        level: "info",
-        data: transitionData,
-      })
-
       // Log concerning transitions
       if (
         prevState.current.isAuthenticated &&
@@ -43,12 +35,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
         !currentState.loading
       ) {
         console.warn("[Auth Debug] AuthGuard: User became unauthenticated, will redirect to /auth")
-        Sentry.addBreadcrumb({
-          category: "auth",
-          message: "User became unauthenticated - redirecting to /auth",
-          level: "warning",
-          data: transitionData,
-        })
       }
     }
 
@@ -76,11 +62,5 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   // Not loading and no user - redirect to auth
   console.log("[Auth Debug] AuthGuard redirecting to /auth from:", location.pathname)
-  Sentry.addBreadcrumb({
-    category: "auth",
-    message: "AuthGuard redirect to /auth",
-    level: "info",
-    data: { from: location.pathname },
-  })
   return <Navigate to="/auth" state={{ from: location }} replace />
 }
