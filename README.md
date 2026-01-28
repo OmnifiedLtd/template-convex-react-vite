@@ -13,7 +13,7 @@ A modern, production-ready template for building full-stack applications with Re
 - **Type Safety:** End-to-end TypeScript with Convex schema validation
 - **Testing:** Vitest with highly testable XState machines
 - **File Storage:** Built-in Convex file storage with upload/download utilities
-- **Dev Tools:** Hot reload, Biome (linting + formatting)
+- **Dev Tools:** Hot reload, hybrid linting (see below)
 
 ## Quick Start
 
@@ -88,6 +88,42 @@ npm run test:run
 ### Port Configuration
 
 The Convex Auth `SITE_URL` environment variable is configured for `http://localhost:5173`. If Vite starts on a different port, use `npm run dev:restart` to ensure the server starts on the correct port.
+
+## Linting Strategy
+
+This template uses a **hybrid linting approach** with different tools for frontend and backend:
+
+| Directory | Tool | Why |
+|-----------|------|-----|
+| `apps/app/` (Frontend) | **Biome** | 10-25x faster than ESLint, built-in formatting, excellent React hooks support via `useExhaustiveDependencies` |
+| `convex/` (Backend) | **ESLint + Convex plugin** | Convex-specific rules that catch bugs TypeScript alone won't find |
+
+### Why Not Use One Tool Everywhere?
+
+**Convex has an [official ESLint plugin](https://docs.convex.dev/eslint)** with rules that Biome doesn't support:
+
+- `@convex-dev/no-old-registered-function-syntax` - Enforces object syntax for queries/mutations
+- Future rules for argument validators and explicit table IDs
+
+These rules catch Convex-specific issues like:
+- Functions without proper `args` validators (security/correctness concern)
+- Un-awaited async operations in actions (can cause silent failures)
+- Old function syntax that prevents adding validators
+
+**Biome excels at React/frontend linting** with its fast `useExhaustiveDependencies` rule for hooks, which is critical for avoiding stale closure bugs with Convex's reactive queries.
+
+### Running Linters
+
+```bash
+# Lint everything (Convex + Frontend)
+npm run lint
+
+# Lint only Convex backend
+npm run lint:convex
+
+# Lint only frontend (from apps/app/)
+npm run lint --workspace=app
+```
 
 ## Environment Variables
 
