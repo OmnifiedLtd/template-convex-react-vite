@@ -25,13 +25,16 @@ npm run dev:restart
 # Build for production
 npm run build
 
-# Lint all workspaces (Biome)
+# Lint everything (ESLint for Convex + Biome for frontend)
 npm run lint
 
-# Format code (Biome)
+# Lint only Convex backend (ESLint)
+npm run lint:convex
+
+# Format frontend code (Biome)
 npm run format --workspace=app
 
-# Lint + format in one command (Biome)
+# Lint + format frontend in one command (Biome)
 npm run check:fix --workspace=app
 
 # Typecheck everything
@@ -47,7 +50,7 @@ npm run typecheck
 - **Auth**: Convex Auth with Resend OTP (passwordless email authentication)
 - **UI State**: XState v5 for complex UI workflows (dialogs, wizards, multi-step forms)
 - **UI Components**: Radix UI primitives + custom components in `apps/app/src/components/ui/`
-- **Linting/Formatting**: Biome (fast, unified linter and formatter)
+- **Linting/Formatting**: Hybrid - Biome for frontend, ESLint + Convex plugin for backend
 - **Testing**: Vitest for unit and integration tests
 - **Error Monitoring**: Sentry (optional - frontend via `@sentry/react`, backend via Convex integration)
 
@@ -62,11 +65,12 @@ template-full-stack-convex/
 │       ├── src/
 │       ├── public/
 │       ├── package.json
-│       ├── biome.json          # Biome linter/formatter config
+│       ├── biome.json          # Biome linter/formatter config (frontend)
 │       ├── vite.config.ts
 │       └── vercel.json
 │
 ├── convex/                     # Convex backend
+├── eslint.config.js            # ESLint config (Convex backend only)
 ├── package.json                # Root workspace config
 └── CLAUDE.md
 ```
@@ -476,14 +480,32 @@ npm run test:run
 ## Code Style
 
 - Use TypeScript strict mode
-- Follow Biome linting rules (config in `apps/app/biome.json`)
 - Use Tailwind for styling
 - Prefer functional components and hooks
 - Keep components focused and single-responsibility
 - Use Convex validators for all function args and returns
-- No semicolons (Biome formatter config)
+- No semicolons (Biome formatter config for frontend)
 
-### Biome Configuration
+## Linting Strategy
+
+This template uses a **hybrid linting approach**:
+
+| Directory | Tool | Config | Why |
+|-----------|------|--------|-----|
+| `apps/app/` | **Biome** | `apps/app/biome.json` | 10-25x faster, excellent React hooks support |
+| `convex/` | **ESLint** | `eslint.config.js` | Convex-specific rules from official plugin |
+
+### Why Hybrid?
+
+**Convex has an [official ESLint plugin](https://docs.convex.dev/eslint)** with rules Biome doesn't support:
+
+- `@convex-dev/no-old-registered-function-syntax` - Enforces object syntax for queries/mutations
+
+These catch Convex-specific issues that TypeScript alone won't find.
+
+**Biome excels at React linting** with its fast `useExhaustiveDependencies` rule, critical for avoiding stale closure bugs with Convex's reactive queries.
+
+### Biome Configuration (Frontend)
 
 The Biome config (`apps/app/biome.json`) includes custom settings for Convex hooks:
 
@@ -506,4 +528,17 @@ The Biome config (`apps/app/biome.json`) includes custom settings for Convex hoo
 }
 ```
 
-This tells Biome that `useMutation` and `useAction` return stable values that don't need to be included in dependency arrays.
+This tells Biome that `useMutation` and `useAction` return stable values that don't need to be in dependency arrays.
+
+### ESLint Configuration (Backend)
+
+The ESLint config (`eslint.config.js`) uses the Convex plugin:
+
+```javascript
+import convexPlugin from "@convex-dev/eslint-plugin"
+
+export default [
+  // Convex-specific rules for backend
+  ...convexPlugin.configs.recommended,
+]
+```

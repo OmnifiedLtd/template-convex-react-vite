@@ -13,7 +13,8 @@
     "dev:restart": "lsof -ti:5173,5174,5175 | xargs kill -9 2>/dev/null; npm run dev",
     "build": "npm run build --workspaces --if-present",
     "build:app": "npm run build --workspace=app",
-    "lint": "npm run lint --workspaces --if-present",
+    "lint": "npm run lint:convex && npm run lint --workspaces --if-present",
+    "lint:convex": "eslint convex/",
     "typecheck": "npx convex typecheck && cd apps/app && npx tsc --noEmit",
     "test": "npm run test --workspace=app",
     "test:run": "npm run test:run --workspace=app"
@@ -25,6 +26,11 @@
     "resend": "^6.8.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.10"
+    "@biomejs/biome": "^2.3.13",
+    "@convex-dev/eslint-plugin": "^1.1.1",
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^25.0.10",
+    "eslint": "^9.39.2",
+    "typescript-eslint": "^8.54.0"
   }
 }
