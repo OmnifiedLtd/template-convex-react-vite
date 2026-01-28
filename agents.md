@@ -1,6 +1,6 @@
-# CLAUDE.md
+# agents.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding assistants when working with code in this repository.
 
 ## Project Overview
 
@@ -25,8 +25,14 @@ npm run dev:restart
 # Build for production
 npm run build
 
-# Lint all workspaces
+# Lint all workspaces (Biome)
 npm run lint
+
+# Format code (Biome)
+npm run format --workspace=app
+
+# Lint + format in one command (Biome)
+npm run check:fix --workspace=app
 
 # Typecheck everything
 npm run typecheck
@@ -39,7 +45,10 @@ npm run typecheck
 - **Frontend**: React 18 + TypeScript + Vite + TailwindCSS
 - **Backend**: Convex (real-time database, serverless functions)
 - **Auth**: Convex Auth with Resend OTP (passwordless email authentication)
-- **UI**: Radix UI primitives + custom components in `apps/app/src/components/ui/`
+- **UI State**: XState v5 for complex UI workflows (dialogs, wizards, multi-step forms)
+- **UI Components**: Radix UI primitives + custom components in `apps/app/src/components/ui/`
+- **Linting/Formatting**: Biome (fast, unified linter and formatter)
+- **Testing**: Vitest for unit and integration tests
 - **Error Monitoring**: Sentry (optional - frontend via `@sentry/react`, backend via Convex integration)
 
 ## Architecture
@@ -53,6 +62,7 @@ template-full-stack-convex/
 │       ├── src/
 │       ├── public/
 │       ├── package.json
+│       ├── biome.json          # Biome linter/formatter config
 │       ├── vite.config.ts
 │       └── vercel.json
 │
@@ -117,6 +127,8 @@ Located in `apps/app/`:
 - `src/App.tsx` - React Router routes
 - `src/hooks/convex/` - Centralized Convex hook exports
 - `src/components/layout/` - AuthGuard, MainLayout, Header
+- `src/machines/` - XState machine definitions
+- `src/features/` - Feature-specific components (e.g., `features/tasks/`)
 - `@` alias maps to `./src/`
 - `convex/_generated` alias maps to `../../convex/_generated`
 
@@ -165,10 +177,6 @@ Set these in the Convex Dashboard for both dev and production deployments:
 - `AUTH_RESEND_KEY` - Resend API key for sending OTP emails
 - `SITE_URL` - Frontend URL (e.g., `http://localhost:5173` for dev, `https://your-app.vercel.app` for prod)
 
-**⚠️ IMPORTANT: SITE_URL Must Match Your Frontend**
-
-The `SITE_URL` environment variable in Convex must match the URL where your frontend is hosted. Without it, authentication will fail with "Missing environment variable SITE_URL".
-
 ### Production Environment Variables (Vercel)
 
 For the React app:
@@ -177,73 +185,6 @@ For the React app:
 VITE_CONVEX_URL=https://your-production-deployment.convex.cloud
 # VITE_SENTRY_DSN=your-production-sentry-dsn (optional)
 ```
-
-## Convex Auth Setup
-
-Convex Auth requires several environment variables to function. Run this command to auto-generate and set them:
-
-```bash
-npx @convex-dev/auth
-```
-
-This sets up:
-- `JWT_PRIVATE_KEY` - Required for signing authentication tokens
-- `JWKS` - JSON Web Key Set for token verification
-- `SITE_URL` - Frontend URL for auth callbacks
-
-### Dev Password Auth Configuration
-
-Dev password authentication requires **two separate environment variables**:
-
-| Variable | Location | Purpose |
-|----------|----------|---------|
-| `VITE_ENABLE_DEV_PASSWORD_AUTH=true` | `.env.local` (frontend) | Shows the dev password form on the auth page |
-| `ENABLE_DEV_PASSWORD_AUTH=true` | Convex Dashboard | Enables the dev-password auth provider in the backend |
-
-Both must be set for dev password auth to work. Set the Convex env var with:
-
-```bash
-npx convex env set ENABLE_DEV_PASSWORD_AUTH true
-```
-
-### Credential Matching
-
-The dev password credentials must match between frontend and backend:
-
-- Frontend defaults are in `apps/app/src/pages/Auth.tsx`
-- Backend defaults are in `convex/auth.ts`
-
-To customize, set these Convex environment variables:
-- `DEV_PASSWORD_AUTH_EMAIL` - Must match the email used in the frontend form
-- `DEV_PASSWORD_AUTH_PASSWORD` - Must match the password used in the frontend form
-
-## Development Testing
-
-For local development, authentication uses Convex Auth with Resend OTP. During testing:
-
-1. **Resend Testing Mode**: Until you verify a domain in Resend, you can only send OTP emails to the account owner's email address.
-2. **Enter your email** on the auth page and check your inbox for the 8-digit code.
-3. Codes expire after 20 minutes.
-
-## Key Tables
-
-- `users`, `accounts`, `sessions`, `verificationCodes` - Convex Auth tables
-- `tasks` - Example table demonstrating CRUD operations with user ownership
-
-## Convex MCP Tools
-
-Proactively use the Convex MCP server tools when working with this codebase:
-
-- `mcp__convex__status` - Get deployment info
-- `mcp__convex__tables` - View all tables and their schemas
-- `mcp__convex__data` - Read data from tables to debug or verify state
-- `mcp__convex__functionSpec` - List all Convex functions with their args/returns
-- `mcp__convex__run` - Execute queries/mutations/actions directly
-- `mcp__convex__logs` - Fetch recent function execution logs for debugging
-- `mcp__convex__runOneoffQuery` - Run ad-hoc read-only queries
-- `mcp__convex__envList/Get/Set/Remove` - Manage environment variables
-
-Use these tools to inspect live data, debug issues, and verify changes without needing to check the browser.
 
 ## Adding New Features
 
@@ -313,11 +254,185 @@ function PostsList() {
 }
 ```
 
+## XState v5 for UI State Management
+
+This project uses **XState v5** for complex UI state management, while **Convex** owns all server state.
+
+### State Ownership Split
+
+- **Convex**: Server state (queries, mutations, auth, data)
+- **XState**: Client-only UI state (dialogs, wizards, multi-step forms, loading/error/success orchestration)
+
+**Key Rule**: Don't mirror Convex query results into machine context. Keep XState context for UI workflow data (ids, current step, pending action, transient errors).
+
+### Directory Structure
+
+```
+apps/app/src/
+├── machines/                    # XState machine definitions
+│   └── deleteDialogMachine.ts   # Example: delete confirmation dialog
+├── features/
+│   └── tasks/
+│       └── DeleteTaskDialog.tsx # React component using the machine
+```
+
+### XState v5 Patterns
+
+#### 1. Define machines with setup() API
+
+```typescript
+import { setup, assign, fromPromise } from "xstate";
+
+export const myMachine = setup({
+  types: {
+    context: {} as { itemId: string | null; error: string | null },
+    events: {} as { type: "OPEN"; id: string } | { type: "CLOSE" },
+  },
+  actors: {
+    // Define actor interface - implementation provided at runtime
+    performAction: fromPromise<void, { id: string }>(async () => {
+      throw new Error("Must be provided");
+    }),
+  },
+  actions: {
+    setItem: assign({ itemId: ({ event }) => event.type === "OPEN" ? event.id : null }),
+  },
+}).createMachine({
+  id: "myMachine",
+  initial: "closed",
+  context: { itemId: null, error: null },
+  states: {
+    closed: { on: { OPEN: { target: "open", actions: "setItem" } } },
+    open: { /* ... */ },
+  },
+});
+```
+
+#### 2. Inject Convex mutations via provide()
+
+```typescript
+import { useMachine } from "@xstate/react";
+import { fromPromise } from "xstate";
+import { useMutation } from "convex/react";
+
+function MyComponent() {
+  const myMutation = useMutation(api.items.remove);
+
+  const [snapshot, send] = useMachine(
+    myMachine.provide({
+      actors: {
+        performAction: fromPromise(async ({ input }) => {
+          await myMutation({ id: input.id });
+        }),
+      },
+    }),
+    { input: undefined }
+  );
+
+  // Use snapshot.matches() to derive UI state
+  const isLoading = snapshot.matches({ open: "loading" });
+}
+```
+
+#### 3. Test machines without React
+
+```typescript
+import { createActor, fromPromise } from "xstate";
+import { describe, it, expect, vi } from "vitest";
+
+describe("myMachine", () => {
+  it("transitions correctly", async () => {
+    const mockFn = vi.fn().mockResolvedValue(undefined);
+
+    const actor = createActor(
+      myMachine.provide({
+        actors: {
+          performAction: fromPromise(async ({ input }) => {
+            await mockFn(input.id);
+          }),
+        },
+      }),
+      { input: undefined }
+    ).start();
+
+    actor.send({ type: "OPEN", id: "123" });
+    expect(actor.getSnapshot().matches("open")).toBe(true);
+  });
+});
+```
+
+### Why XState Machines Are Highly Testable
+
+XState machines are declarative and pure, which makes them exceptionally testable. **You can test 90% of your UI logic without touching React or the DOM.**
+
+| Test Type | How It Works | Example |
+|-----------|--------------|---------|
+| **Synchronous transitions** | Send events and check the resulting state immediately | `actor.send({ type: "OPEN" }); expect(snapshot.value).toBe("open")` |
+| **Async flows with mocked actors** | Use `machine.provide()` to inject mock implementations | `machine.provide({ actors: { deleteItem: fromPromise(mockFn) } })` |
+| **waitFor patterns** | Subscribe to the actor and wait for specific states | `await waitFor(actor, (s) => s.matches({ open: "error" }))` |
+
+**Key insight**: Because the machine logic is separate from React, you can:
+- Test state transitions without rendering components
+- Mock async operations (like Convex mutations) trivially via `provide()`
+- Verify error handling, retry logic, and edge cases in isolation
+- Run tests much faster (no DOM, no React rendering overhead)
+
+See `apps/app/src/machines/deleteDialogMachine.test.ts` for a complete example with 17 tests covering all state transitions and async flows.
+
+### When to Use XState
+
+Use XState for:
+- Multi-step workflows (wizards, complex forms)
+- Dialog/modal state with async operations
+- Loading → success → error state machines
+- Any UI state that has explicit transitions between states
+
+Don't use XState for:
+- Simple boolean flags (use useState)
+- Data that comes from Convex (use useQuery)
+- Global app state without clear transitions (consider Convex or Context)
+
+### Running Tests
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests once (CI mode)
+npm run test:run
+```
+
 ## Code Style
 
 - Use TypeScript strict mode
-- Follow ESLint rules
+- Follow Biome linting rules (config in `apps/app/biome.json`)
 - Use Tailwind for styling
 - Prefer functional components and hooks
 - Keep components focused and single-responsibility
 - Use Convex validators for all function args and returns
+- No semicolons (Biome formatter config)
+
+### Biome Configuration
+
+The Biome config (`apps/app/biome.json`) includes custom settings for Convex hooks:
+
+```json
+{
+  "linter": {
+    "rules": {
+      "correctness": {
+        "useExhaustiveDependencies": {
+          "options": {
+            "hooks": [
+              { "name": "useMutation", "stableResult": true },
+              { "name": "useAction", "stableResult": true }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+This tells Biome that `useMutation` and `useAction` return stable values that don't need to be included in dependency arrays.
