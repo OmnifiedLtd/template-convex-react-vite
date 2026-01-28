@@ -7,9 +7,11 @@ A modern, production-ready template for building full-stack applications with Re
 - **Frontend:** React 18 + TypeScript + Vite + TailwindCSS
 - **Backend:** Convex (real-time database, serverless functions)
 - **Auth:** Convex Auth with Resend OTP (passwordless email authentication)
+- **UI State:** XState v5 for complex UI workflows (dialogs, wizards, forms)
 - **UI Components:** Radix UI primitives + shadcn/ui
 - **Styling:** TailwindCSS with custom design tokens
 - **Type Safety:** End-to-end TypeScript with Convex schema validation
+- **Testing:** Vitest with highly testable XState machines
 - **File Storage:** Built-in Convex file storage with upload/download utilities
 - **Dev Tools:** Hot reload, ESLint, Prettier
 
@@ -41,6 +43,8 @@ The app will be available at `http://localhost:5173`
 │   │   ├── components/    # React components
 │   │   │   ├── ui/       # shadcn/ui components
 │   │   │   └── layout/   # Layout components
+│   │   ├── machines/     # XState state machines
+│   │   ├── features/     # Feature-specific components
 │   │   ├── hooks/        # Custom React hooks
 │   │   ├── pages/        # Page components
 │   │   └── lib/          # Utilities
@@ -73,6 +77,12 @@ npm run lint
 
 # Type checking
 npm run typecheck
+
+# Run tests
+npm run test
+
+# Run tests once (CI mode)
+npm run test:run
 ```
 
 ### Port Configuration
@@ -167,6 +177,110 @@ tasks: defineTable({
 ```
 
 See `convex/tasks.ts` for CRUD operations (list, create, toggle, remove).
+
+## XState for UI State Management
+
+This template uses **XState v5** for complex UI state management, while **Convex** owns all server state.
+
+### State Ownership
+
+| Layer | Owns | Examples |
+|-------|------|----------|
+| **Convex** | Server state | Queries, mutations, auth, data |
+| **XState** | Client UI state | Dialogs, wizards, multi-step forms, loading/error states |
+
+### Example: Delete Confirmation Dialog
+
+```typescript
+// machines/deleteDialogMachine.ts - Pure, testable state machine
+export const deleteDialogMachine = setup({
+  types: { /* typed context and events */ },
+  actors: {
+    deleteItem: fromPromise(async () => { /* provided at runtime */ }),
+  },
+}).createMachine({
+  initial: "closed",
+  states: {
+    closed: { on: { OPEN: "open.idle" } },
+    open: {
+      states: {
+        idle: { on: { CONFIRM: "deleting", CLOSE: "#closed" } },
+        deleting: { invoke: { src: "deleteItem", onDone: "#closed", onError: "error" } },
+        error: { on: { RETRY: "deleting", CLOSE: "#closed" } },
+      },
+    },
+  },
+});
+
+// Component - Inject Convex mutation via provide()
+function DeleteDialog() {
+  const removeTask = useMutation(api.tasks.remove);
+
+  const [snapshot, send] = useMachine(
+    deleteDialogMachine.provide({
+      actors: {
+        deleteItem: fromPromise(async ({ input }) => {
+          await removeTask({ id: input.itemId });
+        }),
+      },
+    })
+  );
+
+  return <Dialog open={snapshot.matches("open")} />;
+}
+```
+
+## Testing
+
+### Why XState Machines Are Highly Testable
+
+XState machines are **declarative and pure**, which means you can **test 90% of your UI logic without touching React or the DOM**.
+
+| Test Type | How It Works |
+|-----------|--------------|
+| **Synchronous transitions** | Send events and check resulting state immediately |
+| **Async flows** | Use `machine.provide()` to inject mock implementations |
+| **waitFor patterns** | Subscribe to the actor and wait for specific states |
+
+### Example Test
+
+```typescript
+import { createActor, fromPromise } from "xstate";
+import { describe, it, expect, vi } from "vitest";
+
+describe("deleteDialogMachine", () => {
+  it("transitions to error state when deletion fails", async () => {
+    const mockDelete = vi.fn().mockRejectedValue(new Error("Network error"));
+
+    const actor = createActor(
+      deleteDialogMachine.provide({
+        actors: {
+          deleteItem: fromPromise(async ({ input }) => {
+            await mockDelete(input.itemId);
+          }),
+        },
+      }),
+      { input: undefined }
+    ).start();
+
+    actor.send({ type: "OPEN", itemId: "123", itemTitle: "Test" });
+    actor.send({ type: "CONFIRM" });
+
+    // Wait for error state
+    await waitFor(actor, (s) => s.matches({ open: "error" }));
+
+    expect(actor.getSnapshot().context.error).toBe("Network error");
+  });
+});
+```
+
+**Key benefits:**
+- Test state transitions without rendering components
+- Mock Convex mutations trivially via `provide()`
+- Verify error handling, retry logic, and edge cases in isolation
+- Tests run fast (no DOM, no React rendering overhead)
+
+See `apps/app/src/machines/deleteDialogMachine.test.ts` for 17 comprehensive tests.
 
 ## Adding New Features
 
@@ -271,6 +385,8 @@ npx convex env set SITE_URL https://your-app.vercel.app --prod
 
 - [Convex Documentation](https://docs.convex.dev)
 - [Convex Auth Documentation](https://labs.convex.dev/auth)
+- [XState v5 Documentation](https://stately.ai/docs/xstate)
+- [Vitest Documentation](https://vitest.dev)
 - [Vite Documentation](https://vitejs.dev)
 - [TailwindCSS Documentation](https://tailwindcss.com)
 - [shadcn/ui Components](https://ui.shadcn.com)
