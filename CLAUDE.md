@@ -39,7 +39,9 @@ npm run typecheck
 - **Frontend**: React 18 + TypeScript + Vite + TailwindCSS
 - **Backend**: Convex (real-time database, serverless functions)
 - **Auth**: Convex Auth with Resend OTP (passwordless email authentication)
-- **UI**: Radix UI primitives + custom components in `apps/app/src/components/ui/`
+- **UI State**: XState v5 for complex UI workflows (dialogs, wizards, multi-step forms)
+- **UI Components**: Radix UI primitives + custom components in `apps/app/src/components/ui/`
+- **Testing**: Vitest for unit and integration tests
 - **Error Monitoring**: Sentry (optional - frontend via `@sentry/react`, backend via Convex integration)
 
 ## Architecture
@@ -117,6 +119,8 @@ Located in `apps/app/`:
 - `src/App.tsx` - React Router routes
 - `src/hooks/convex/` - Centralized Convex hook exports
 - `src/components/layout/` - AuthGuard, MainLayout, Header
+- `src/machines/` - XState machine definitions
+- `src/features/` - Feature-specific components (e.g., `features/tasks/`)
 - `@` alias maps to `./src/`
 - `convex/_generated` alias maps to `../../convex/_generated`
 
@@ -311,6 +315,154 @@ function PostsList() {
 
   return <div>...</div>
 }
+```
+
+## XState v5 for UI State Management
+
+This project uses **XState v5** for complex UI state management, while **Convex** owns all server state.
+
+### State Ownership Split
+
+- **Convex**: Server state (queries, mutations, auth, data)
+- **XState**: Client-only UI state (dialogs, wizards, multi-step forms, loading/error/success orchestration)
+
+**Key Rule**: Don't mirror Convex query results into machine context. Keep XState context for UI workflow data (ids, current step, pending action, transient errors).
+
+### Directory Structure
+
+```
+apps/app/src/
+├── machines/                    # XState machine definitions
+│   └── deleteDialogMachine.ts   # Example: delete confirmation dialog
+├── features/
+│   └── tasks/
+│       └── DeleteTaskDialog.tsx # React component using the machine
+```
+
+### XState v5 Patterns
+
+#### 1. Define machines with setup() API
+
+```typescript
+import { setup, assign, fromPromise } from "xstate";
+
+export const myMachine = setup({
+  types: {
+    context: {} as { itemId: string | null; error: string | null },
+    events: {} as { type: "OPEN"; id: string } | { type: "CLOSE" },
+  },
+  actors: {
+    // Define actor interface - implementation provided at runtime
+    performAction: fromPromise<void, { id: string }>(async () => {
+      throw new Error("Must be provided");
+    }),
+  },
+  actions: {
+    setItem: assign({ itemId: ({ event }) => event.type === "OPEN" ? event.id : null }),
+  },
+}).createMachine({
+  id: "myMachine",
+  initial: "closed",
+  context: { itemId: null, error: null },
+  states: {
+    closed: { on: { OPEN: { target: "open", actions: "setItem" } } },
+    open: { /* ... */ },
+  },
+});
+```
+
+#### 2. Inject Convex mutations via provide()
+
+```typescript
+import { useMachine } from "@xstate/react";
+import { fromPromise } from "xstate";
+import { useMutation } from "convex/react";
+
+function MyComponent() {
+  const myMutation = useMutation(api.items.remove);
+
+  const [snapshot, send] = useMachine(
+    myMachine.provide({
+      actors: {
+        performAction: fromPromise(async ({ input }) => {
+          await myMutation({ id: input.id });
+        }),
+      },
+    }),
+    { input: undefined }
+  );
+
+  // Use snapshot.matches() to derive UI state
+  const isLoading = snapshot.matches({ open: "loading" });
+}
+```
+
+#### 3. Test machines without React
+
+```typescript
+import { createActor, fromPromise } from "xstate";
+import { describe, it, expect, vi } from "vitest";
+
+describe("myMachine", () => {
+  it("transitions correctly", async () => {
+    const mockFn = vi.fn().mockResolvedValue(undefined);
+
+    const actor = createActor(
+      myMachine.provide({
+        actors: {
+          performAction: fromPromise(async ({ input }) => {
+            await mockFn(input.id);
+          }),
+        },
+      }),
+      { input: undefined }
+    ).start();
+
+    actor.send({ type: "OPEN", id: "123" });
+    expect(actor.getSnapshot().matches("open")).toBe(true);
+  });
+});
+```
+
+### Why XState Machines Are Highly Testable
+
+XState machines are declarative and pure, which makes them exceptionally testable. **You can test 90% of your UI logic without touching React or the DOM.**
+
+| Test Type | How It Works | Example |
+|-----------|--------------|---------|
+| **Synchronous transitions** | Send events and check the resulting state immediately | `actor.send({ type: "OPEN" }); expect(snapshot.value).toBe("open")` |
+| **Async flows with mocked actors** | Use `machine.provide()` to inject mock implementations | `machine.provide({ actors: { deleteItem: fromPromise(mockFn) } })` |
+| **waitFor patterns** | Subscribe to the actor and wait for specific states | `await waitFor(actor, (s) => s.matches({ open: "error" }))` |
+
+**Key insight**: Because the machine logic is separate from React, you can:
+- Test state transitions without rendering components
+- Mock async operations (like Convex mutations) trivially via `provide()`
+- Verify error handling, retry logic, and edge cases in isolation
+- Run tests much faster (no DOM, no React rendering overhead)
+
+See `apps/app/src/machines/deleteDialogMachine.test.ts` for a complete example with 17 tests covering all state transitions and async flows.
+
+### When to Use XState
+
+Use XState for:
+- Multi-step workflows (wizards, complex forms)
+- Dialog/modal state with async operations
+- Loading → success → error state machines
+- Any UI state that has explicit transitions between states
+
+Don't use XState for:
+- Simple boolean flags (use useState)
+- Data that comes from Convex (use useQuery)
+- Global app state without clear transitions (consider Convex or Context)
+
+### Running Tests
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests once (CI mode)
+npm run test:run
 ```
 
 ## Code Style

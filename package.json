@@ -14,7 +14,9 @@
     "build": "npm run build --workspaces --if-present",
     "build:app": "npm run build --workspace=app",
     "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npx convex typecheck && cd apps/app && npx tsc --noEmit"
+    "typecheck": "npx convex typecheck && cd apps/app && npx tsc --noEmit",
+    "test": "npm run test --workspace=app",
+    "test:run": "npm run test:run --workspace=app"
   },
   "dependencies": {
     "@auth/core": "^0.37.4",
