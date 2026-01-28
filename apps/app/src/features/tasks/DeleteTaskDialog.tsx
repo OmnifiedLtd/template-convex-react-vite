@@ -1,13 +1,8 @@
-import { fromPromise } from "xstate";
-import { useMachine } from "@xstate/react";
-import { useMutation } from "convex/react";
-import { api } from "convex/_generated/api";
-import type { Id } from "convex/_generated/dataModel";
-import {
-  deleteDialogMachine,
-  isDialogOpen,
-  type DeleteActorInput,
-} from "@/machines/deleteDialogMachine";
+import { useMachine } from "@xstate/react"
+import { api } from "convex/_generated/api"
+import type { Id } from "convex/_generated/dataModel"
+import { useMutation } from "convex/react"
+import { fromPromise } from "xstate"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -15,18 +10,21 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+import {
+  type DeleteActorInput,
+  deleteDialogMachine,
+  isDialogOpen,
+} from "@/machines/deleteDialogMachine"
 
 export type DeleteTaskDialogProps = {
   /**
    * Callback to request opening the dialog.
    * Returns the send function to trigger OPEN event.
    */
-  onOpenRequest?: (
-    openDialog: (itemId: Id<"tasks">, itemTitle: string) => void
-  ) => void;
-};
+  onOpenRequest?: (openDialog: (itemId: Id<"tasks">, itemTitle: string) => void) => void
+}
 
 /**
  * DeleteTaskDialog - A confirmation dialog for deleting tasks
@@ -56,7 +54,7 @@ export type DeleteTaskDialogProps = {
  */
 export function DeleteTaskDialog({ onOpenRequest }: DeleteTaskDialogProps) {
   // Get the Convex mutation - this is the "server state" side
-  const removeTask = useMutation(api.tasks.remove);
+  const removeTask = useMutation(api.tasks.remove)
 
   // Create the state machine with the Convex mutation injected
   const [snapshot, send] = useMachine(
@@ -64,37 +62,37 @@ export function DeleteTaskDialog({ onOpenRequest }: DeleteTaskDialogProps) {
       actors: {
         // Inject the Convex mutation as an XState actor
         deleteItem: fromPromise<void, DeleteActorInput>(async ({ input }) => {
-          await removeTask({ id: input.itemId });
+          await removeTask({ id: input.itemId })
         }),
       },
     }),
-    { input: undefined }
-  );
+    { input: undefined },
+  )
 
   // Expose the open function to parent components
   const openDialog = (itemId: Id<"tasks">, itemTitle: string) => {
-    send({ type: "OPEN", itemId, itemTitle });
-  };
+    send({ type: "OPEN", itemId, itemTitle })
+  }
 
   // Call the onOpenRequest callback with our openDialog function
   // This allows parent components to trigger the dialog
   if (onOpenRequest) {
-    onOpenRequest(openDialog);
+    onOpenRequest(openDialog)
   }
 
   // Derive UI state from the machine state
-  const open = isDialogOpen(snapshot);
-  const isDeleting = snapshot.matches({ open: "deleting" });
-  const hasError = snapshot.matches({ open: "error" });
-  const error = snapshot.context.error;
-  const itemTitle = snapshot.context.itemTitle;
+  const open = isDialogOpen(snapshot)
+  const isDeleting = snapshot.matches({ open: "deleting" })
+  const hasError = snapshot.matches({ open: "error" })
+  const error = snapshot.context.error
+  const itemTitle = snapshot.context.itemTitle
 
   return (
     <AlertDialog
       open={open}
       onOpenChange={(isOpen) => {
         if (!isOpen && !isDeleting) {
-          send({ type: "CLOSE" });
+          send({ type: "CLOSE" })
         }
       }}
     >
@@ -103,25 +101,17 @@ export function DeleteTaskDialog({ onOpenRequest }: DeleteTaskDialogProps) {
           <AlertDialogTitle>Delete Task</AlertDialogTitle>
           <AlertDialogDescription>
             Are you sure you want to delete{" "}
-            <span className="font-medium text-foreground">
-              &ldquo;{itemTitle}&rdquo;
-            </span>
-            ? This action cannot be undone.
+            <span className="font-medium text-foreground">&ldquo;{itemTitle}&rdquo;</span>? This
+            action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         {hasError && error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
-          </div>
+          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
         )}
 
         <AlertDialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => send({ type: "CLOSE" })}
-            disabled={isDeleting}
-          >
+          <Button variant="outline" onClick={() => send({ type: "CLOSE" })} disabled={isDeleting}>
             Cancel
           </Button>
           <Button
@@ -134,7 +124,7 @@ export function DeleteTaskDialog({ onOpenRequest }: DeleteTaskDialogProps) {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
+  )
 }
 
 /**
@@ -142,37 +132,37 @@ export function DeleteTaskDialog({ onOpenRequest }: DeleteTaskDialogProps) {
  * Provides a cleaner API for components that need to open the dialog.
  */
 export function useDeleteTaskDialog() {
-  const removeTask = useMutation(api.tasks.remove);
+  const removeTask = useMutation(api.tasks.remove)
 
   const [snapshot, send] = useMachine(
     deleteDialogMachine.provide({
       actors: {
         deleteItem: fromPromise<void, DeleteActorInput>(async ({ input }) => {
-          await removeTask({ id: input.itemId });
+          await removeTask({ id: input.itemId })
         }),
       },
     }),
-    { input: undefined }
-  );
+    { input: undefined },
+  )
 
   return {
     snapshot,
     send,
     openDialog: (itemId: Id<"tasks">, itemTitle: string) => {
-      send({ type: "OPEN", itemId, itemTitle });
+      send({ type: "OPEN", itemId, itemTitle })
     },
     closeDialog: () => {
-      send({ type: "CLOSE" });
+      send({ type: "CLOSE" })
     },
     confirmDelete: () => {
-      send({ type: snapshot.matches({ open: "error" }) ? "RETRY" : "CONFIRM" });
+      send({ type: snapshot.matches({ open: "error" }) ? "RETRY" : "CONFIRM" })
     },
     isOpen: isDialogOpen(snapshot),
     isDeleting: snapshot.matches({ open: "deleting" }),
     hasError: snapshot.matches({ open: "error" }),
     error: snapshot.context.error,
     itemTitle: snapshot.context.itemTitle,
-  };
+  }
 }
 
 /**
@@ -180,22 +170,15 @@ export function useDeleteTaskDialog() {
  * This is a more self-contained version that exposes an imperative API.
  */
 export function DeleteTaskDialogWithHook() {
-  const {
-    isOpen,
-    isDeleting,
-    hasError,
-    error,
-    itemTitle,
-    closeDialog,
-    confirmDelete,
-  } = useDeleteTaskDialog();
+  const { isOpen, isDeleting, hasError, error, itemTitle, closeDialog, confirmDelete } =
+    useDeleteTaskDialog()
 
   return (
     <AlertDialog
       open={isOpen}
       onOpenChange={(open) => {
         if (!open && !isDeleting) {
-          closeDialog();
+          closeDialog()
         }
       }}
     >
@@ -204,32 +187,24 @@ export function DeleteTaskDialogWithHook() {
           <AlertDialogTitle>Delete Task</AlertDialogTitle>
           <AlertDialogDescription>
             Are you sure you want to delete{" "}
-            <span className="font-medium text-foreground">
-              &ldquo;{itemTitle}&rdquo;
-            </span>
-            ? This action cannot be undone.
+            <span className="font-medium text-foreground">&ldquo;{itemTitle}&rdquo;</span>? This
+            action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         {hasError && error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
-          </div>
+          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
         )}
 
         <AlertDialogFooter>
           <Button variant="outline" onClick={closeDialog} disabled={isDeleting}>
             Cancel
           </Button>
-          <Button
-            variant="destructive"
-            onClick={confirmDelete}
-            disabled={isDeleting}
-          >
+          <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
             {isDeleting ? "Deleting..." : hasError ? "Retry" : "Delete"}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
+  )
 }

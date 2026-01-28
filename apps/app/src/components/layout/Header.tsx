@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react"
+import { Link } from "react-router-dom"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,17 +9,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut } from "lucide-react";
+} from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/hooks/useAuth"
 
 export function Header() {
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useAuth()
 
   const getUserInitials = () => {
-    if (!user?.email) return "U";
-    return user.email.substring(0, 2).toUpperCase();
-  };
+    if (!user?.email) return "U"
+    return user.email.substring(0, 2).toUpperCase()
+  }
 
   return (
     <header className="border-b">
@@ -53,7 +53,10 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive focus:text-destructive">
+              <DropdownMenuItem
+                onClick={signOut}
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Sign out</span>
               </DropdownMenuItem>
@@ -62,5 +65,5 @@ export function Header() {
         )}
       </div>
     </header>
-  );
+  )
 }

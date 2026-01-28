@@ -1,5 +1,5 @@
-import * as React from "react";
-import { cn } from "@/lib/utils";
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
 /**
  * SectionHeader - Typography-based section header for card-less layouts.
@@ -22,15 +22,15 @@ import { cn } from "@/lib/utils";
  */
 interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Optional icon displayed before the title */
-  icon?: React.ReactNode;
+  icon?: React.ReactNode
   /** Section title - required */
-  title: string;
+  title: string
   /** Optional description shown below the title */
-  description?: string;
+  description?: string
   /** Right-aligned action element (button, badge, etc.) */
-  action?: React.ReactNode;
+  action?: React.ReactNode
   /** Size variant - affects title size and spacing */
-  size?: "default" | "large";
+  size?: "default" | "large"
 }
 
 const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
@@ -40,21 +40,17 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
       className={cn(
         "flex items-start justify-between gap-4",
         size === "large" ? "mb-6" : "mb-4",
-        className
+        className,
       )}
       {...props}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          {icon && (
-            <span className="text-muted-foreground shrink-0">
-              {icon}
-            </span>
-          )}
+          {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
           <h3
             className={cn(
               "font-semibold leading-none tracking-tight text-foreground",
-              size === "large" ? "text-xl" : "text-base"
+              size === "large" ? "text-xl" : "text-base",
             )}
           >
             {title}
@@ -65,22 +61,18 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
             className={cn(
               "text-muted-foreground mt-1",
               size === "large" ? "text-sm" : "text-xs",
-              icon && "ml-7" // Align with title when icon present
+              icon && "ml-7", // Align with title when icon present
             )}
           >
             {description}
           </p>
         )}
       </div>
-      {action && (
-        <div className="shrink-0">
-          {action}
-        </div>
-      )}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
-  )
-);
-SectionHeader.displayName = "SectionHeader";
+  ),
+)
+SectionHeader.displayName = "SectionHeader"
 
 /**
  * SectionContent - Content container for card-less sections.
@@ -90,7 +82,7 @@ SectionHeader.displayName = "SectionHeader";
  */
 interface SectionContentProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Spacing between child elements */
-  spacing?: "tight" | "default" | "loose";
+  spacing?: "tight" | "default" | "loose"
 }
 
 const SectionContent = React.forwardRef<HTMLDivElement, SectionContentProps>(
@@ -101,13 +93,13 @@ const SectionContent = React.forwardRef<HTMLDivElement, SectionContentProps>(
         spacing === "tight" && "space-y-2",
         spacing === "default" && "space-y-4",
         spacing === "loose" && "space-y-6",
-        className
+        className,
       )}
       {...props}
     />
-  )
-);
-SectionContent.displayName = "SectionContent";
+  ),
+)
+SectionContent.displayName = "SectionContent"
 
 /**
  * SectionDivider - Subtle visual separator between sections.
@@ -117,7 +109,7 @@ SectionContent.displayName = "SectionContent";
  */
 interface SectionDividerProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Visual style of the divider */
-  variant?: "line" | "space" | "dots";
+  variant?: "line" | "space" | "dots"
 }
 
 const SectionDivider = React.forwardRef<HTMLDivElement, SectionDividerProps>(
@@ -127,8 +119,9 @@ const SectionDivider = React.forwardRef<HTMLDivElement, SectionDividerProps>(
       className={cn(
         "my-8",
         variant === "line" && "border-t border-border",
-        variant === "dots" && "flex justify-center gap-1 [&>span]:w-1 [&>span]:h-1 [&>span]:rounded-full [&>span]:bg-border",
-        className
+        variant === "dots" &&
+          "flex justify-center gap-1 [&>span]:w-1 [&>span]:h-1 [&>span]:rounded-full [&>span]:bg-border",
+        className,
       )}
       aria-hidden="true"
       {...props}
@@ -141,9 +134,9 @@ const SectionDivider = React.forwardRef<HTMLDivElement, SectionDividerProps>(
         </>
       )}
     </div>
-  )
-);
-SectionDivider.displayName = "SectionDivider";
+  ),
+)
+SectionDivider.displayName = "SectionDivider"
 
 /**
  * SectionGroup - Groups related content with consistent spacing.
@@ -153,22 +146,15 @@ SectionDivider.displayName = "SectionDivider";
  */
 interface SectionGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Whether this is the last section (removes bottom margin) */
-  last?: boolean;
+  last?: boolean
 }
 
 const SectionGroup = React.forwardRef<HTMLDivElement, SectionGroupProps>(
   ({ className, last, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        !last && "mb-10",
-        className
-      )}
-      {...props}
-    />
-  )
-);
-SectionGroup.displayName = "SectionGroup";
+    <div ref={ref} className={cn(!last && "mb-10", className)} {...props} />
+  ),
+)
+SectionGroup.displayName = "SectionGroup"
 
 /**
  * ColumnHeader - Large header for the top of a column.
@@ -178,35 +164,19 @@ SectionGroup.displayName = "SectionGroup";
  */
 interface ColumnHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Column title - required */
-  title: string;
+  title: string
   /** Optional subtitle/description */
-  subtitle?: string;
+  subtitle?: string
 }
 
 const ColumnHeader = React.forwardRef<HTMLDivElement, ColumnHeaderProps>(
   ({ className, title, subtitle, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("mb-6", className)}
-      {...props}
-    >
-      <h2 className="text-lg font-semibold text-foreground tracking-tight">
-        {title}
-      </h2>
-      {subtitle && (
-        <p className="text-sm text-muted-foreground mt-1">
-          {subtitle}
-        </p>
-      )}
+    <div ref={ref} className={cn("mb-6", className)} {...props}>
+      <h2 className="text-lg font-semibold text-foreground tracking-tight">{title}</h2>
+      {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
     </div>
-  )
-);
-ColumnHeader.displayName = "ColumnHeader";
+  ),
+)
+ColumnHeader.displayName = "ColumnHeader"
 
-export {
-  SectionHeader,
-  SectionContent,
-  SectionDivider,
-  SectionGroup,
-  ColumnHeader,
-};
+export { SectionHeader, SectionContent, SectionDivider, SectionGroup, ColumnHeader }

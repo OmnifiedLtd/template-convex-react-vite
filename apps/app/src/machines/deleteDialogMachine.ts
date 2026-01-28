@@ -1,5 +1,5 @@
-import { setup, assign, fromPromise } from "xstate";
-import type { Id } from "convex/_generated/dataModel";
+import type { Id } from "convex/_generated/dataModel"
+import { assign, fromPromise, setup } from "xstate"
 
 /**
  * Delete Dialog State Machine
@@ -20,28 +20,28 @@ import type { Id } from "convex/_generated/dataModel";
 
 export type DeleteDialogContext = {
   /** The ID of the item to delete */
-  itemId: Id<"tasks"> | null;
+  itemId: Id<"tasks"> | null
   /** The title of the item (for display in confirmation) */
-  itemTitle: string | null;
+  itemTitle: string | null
   /** Error message if deletion failed */
-  error: string | null;
-};
+  error: string | null
+}
 
 export type DeleteDialogEvents =
   | { type: "OPEN"; itemId: Id<"tasks">; itemTitle: string }
   | { type: "CLOSE" }
   | { type: "CONFIRM" }
-  | { type: "RETRY" };
+  | { type: "RETRY" }
 
 export type DeleteDialogInput = {
-  itemId: Id<"tasks">;
-};
+  itemId: Id<"tasks">
+}
 
 /**
  * Actor type for the delete operation.
  * This is defined separately to allow type-safe provide() calls.
  */
-export type DeleteActorInput = { itemId: Id<"tasks"> };
+export type DeleteActorInput = { itemId: Id<"tasks"> }
 
 export const deleteDialogMachine = setup({
   types: {
@@ -53,18 +53,18 @@ export const deleteDialogMachine = setup({
     // Define the actor interface - implementation provided via machine.provide()
     deleteItem: fromPromise<void, DeleteActorInput>(async () => {
       // Default implementation throws - must be provided at runtime
-      throw new Error("deleteItem actor not provided");
+      throw new Error("deleteItem actor not provided")
     }),
   },
   actions: {
     setItemToDelete: assign({
       itemId: ({ event }) => {
-        if (event.type === "OPEN") return event.itemId;
-        return null;
+        if (event.type === "OPEN") return event.itemId
+        return null
       },
       itemTitle: ({ event }) => {
-        if (event.type === "OPEN") return event.itemTitle;
-        return null;
+        if (event.type === "OPEN") return event.itemTitle
+        return null
       },
       error: () => null,
     }),
@@ -76,14 +76,14 @@ export const deleteDialogMachine = setup({
     setError: assign({
       error: ({ event }) => {
         // In XState v5, onError events have the error in event.error
-        const errorEvent = event as unknown as { error: unknown };
+        const errorEvent = event as unknown as { error: unknown }
         if (errorEvent.error instanceof Error) {
-          return errorEvent.error.message;
+          return errorEvent.error.message
         }
         if (typeof errorEvent.error === "string") {
-          return errorEvent.error;
+          return errorEvent.error
         }
-        return "An unknown error occurred";
+        return "An unknown error occurred"
       },
     }),
   },
@@ -149,27 +149,25 @@ export const deleteDialogMachine = setup({
       },
     },
   },
-});
+})
 
 /**
  * Helper to check if the dialog is in an open state
  */
 export function isDialogOpen(
-  state:
-    | { matches: (state: string | object) => boolean }
-    | { value: string | object }
+  state: { matches: (state: string | object) => boolean } | { value: string | object },
 ): boolean {
   if ("matches" in state) {
     return (
       state.matches({ open: "idle" }) ||
       state.matches({ open: "deleting" }) ||
       state.matches({ open: "error" })
-    );
+    )
   }
   // For testing with raw state values
-  const value = state.value;
+  const value = state.value
   if (typeof value === "object" && value !== null && "open" in value) {
-    return true;
+    return true
   }
-  return false;
+  return false
 }

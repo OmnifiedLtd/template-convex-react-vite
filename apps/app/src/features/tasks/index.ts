@@ -2,4 +2,4 @@ export {
   DeleteTaskDialog,
   DeleteTaskDialogWithHook,
   useDeleteTaskDialog,
-} from "./DeleteTaskDialog";
+} from "./DeleteTaskDialog"
