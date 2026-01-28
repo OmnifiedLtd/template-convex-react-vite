@@ -1,10 +1,8 @@
-import { useQuery, useMutation } from "convex/react";
-import { api } from "convex/_generated/api";
-import type { Doc } from "convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { api } from "convex/_generated/api"
+import type { Doc } from "convex/_generated/dataModel"
+import { useMutation, useQuery } from "convex/react"
+import { Trash2 } from "lucide-react"
+import { useState } from "react"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -12,10 +10,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
-import { useState } from "react";
-import { useDeleteTaskDialog } from "@/features/tasks";
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import { useDeleteTaskDialog } from "@/features/tasks"
 
 /**
  * Home page - demonstrates basic CRUD operations with Convex
@@ -26,21 +26,21 @@ import { useDeleteTaskDialog } from "@/features/tasks";
  * - The delete button triggers the XState machine instead of calling the mutation directly
  */
 export default function Home() {
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const tasks = useQuery(api.tasks.list);
-  const createTask = useMutation(api.tasks.create);
-  const toggleTask = useMutation(api.tasks.toggle);
+  const [newTaskTitle, setNewTaskTitle] = useState("")
+  const tasks = useQuery(api.tasks.list)
+  const createTask = useMutation(api.tasks.create)
+  const toggleTask = useMutation(api.tasks.toggle)
 
   // Use the XState-powered delete dialog
-  const deleteDialog = useDeleteTaskDialog();
+  const deleteDialog = useDeleteTaskDialog()
 
   const handleCreateTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTaskTitle.trim()) return;
+    e.preventDefault()
+    if (!newTaskTitle.trim()) return
 
-    await createTask({ title: newTaskTitle });
-    setNewTaskTitle("");
-  };
+    await createTask({ title: newTaskTitle })
+    setNewTaskTitle("")
+  }
 
   return (
     <div className="container mx-auto max-w-2xl py-12">
@@ -66,10 +66,7 @@ export default function Home() {
               <p className="text-sm text-muted-foreground">No tasks yet. Create one above!</p>
             ) : (
               tasks.map((task: Doc<"tasks">) => (
-                <div
-                  key={task._id}
-                  className="flex items-center gap-2 rounded-lg border p-3"
-                >
+                <div key={task._id} className="flex items-center gap-2 rounded-lg border p-3">
                   <Checkbox
                     checked={task.completed}
                     onCheckedChange={() => toggleTask({ id: task._id })}
@@ -100,7 +97,7 @@ export default function Home() {
         open={deleteDialog.isOpen}
         onOpenChange={(open) => {
           if (!open && !deleteDialog.isDeleting) {
-            deleteDialog.closeDialog();
+            deleteDialog.closeDialog()
           }
         }}
       >
@@ -135,15 +132,11 @@ export default function Home() {
               onClick={deleteDialog.confirmDelete}
               disabled={deleteDialog.isDeleting}
             >
-              {deleteDialog.isDeleting
-                ? "Deleting..."
-                : deleteDialog.hasError
-                  ? "Retry"
-                  : "Delete"}
+              {deleteDialog.isDeleting ? "Deleting..." : deleteDialog.hasError ? "Retry" : "Delete"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

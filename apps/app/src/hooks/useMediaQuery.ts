@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useCallback } from "react";
+import { useCallback, useSyncExternalStore } from "react"
 
 /**
  * Hook to detect if a media query matches
@@ -9,21 +9,21 @@ import { useSyncExternalStore, useCallback } from "react";
 export function useMediaQuery(query: string): boolean {
   const subscribe = useCallback(
     (callback: () => void) => {
-      const mediaQuery = window.matchMedia(query);
-      mediaQuery.addEventListener("change", callback);
-      return () => mediaQuery.removeEventListener("change", callback);
+      const mediaQuery = window.matchMedia(query)
+      mediaQuery.addEventListener("change", callback)
+      return () => mediaQuery.removeEventListener("change", callback)
     },
-    [query]
-  );
+    [query],
+  )
 
   const getSnapshot = useCallback(() => {
-    return window.matchMedia(query).matches;
-  }, [query]);
+    return window.matchMedia(query).matches
+  }, [query])
 
   const getServerSnapshot = useCallback(() => {
     // Default to false on server (mobile-first approach)
-    return false;
-  }, []);
+    return false
+  }, [])
 
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }

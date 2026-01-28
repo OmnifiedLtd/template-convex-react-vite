@@ -25,8 +25,14 @@ npm run dev:restart
 # Build for production
 npm run build
 
-# Lint all workspaces
+# Lint all workspaces (Biome)
 npm run lint
+
+# Format code (Biome)
+npm run format --workspace=app
+
+# Lint + format in one command (Biome)
+npm run check:fix --workspace=app
 
 # Typecheck everything
 npm run typecheck
@@ -41,6 +47,7 @@ npm run typecheck
 - **Auth**: Convex Auth with Resend OTP (passwordless email authentication)
 - **UI State**: XState v5 for complex UI workflows (dialogs, wizards, multi-step forms)
 - **UI Components**: Radix UI primitives + custom components in `apps/app/src/components/ui/`
+- **Linting/Formatting**: Biome (fast, unified linter and formatter)
 - **Testing**: Vitest for unit and integration tests
 - **Error Monitoring**: Sentry (optional - frontend via `@sentry/react`, backend via Convex integration)
 
@@ -55,6 +62,7 @@ template-full-stack-convex/
 │       ├── src/
 │       ├── public/
 │       ├── package.json
+│       ├── biome.json          # Biome linter/formatter config
 │       ├── vite.config.ts
 │       └── vercel.json
 │
@@ -468,8 +476,34 @@ npm run test:run
 ## Code Style
 
 - Use TypeScript strict mode
-- Follow ESLint rules
+- Follow Biome linting rules (config in `apps/app/biome.json`)
 - Use Tailwind for styling
 - Prefer functional components and hooks
 - Keep components focused and single-responsibility
 - Use Convex validators for all function args and returns
+- No semicolons (Biome formatter config)
+
+### Biome Configuration
+
+The Biome config (`apps/app/biome.json`) includes custom settings for Convex hooks:
+
+```json
+{
+  "linter": {
+    "rules": {
+      "correctness": {
+        "useExhaustiveDependencies": {
+          "options": {
+            "hooks": [
+              { "name": "useMutation", "stableResult": true },
+              { "name": "useAction", "stableResult": true }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+This tells Biome that `useMutation` and `useAction` return stable values that don't need to be included in dependency arrays.

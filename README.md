@@ -13,7 +13,7 @@ A modern, production-ready template for building full-stack applications with Re
 - **Type Safety:** End-to-end TypeScript with Convex schema validation
 - **Testing:** Vitest with highly testable XState machines
 - **File Storage:** Built-in Convex file storage with upload/download utilities
-- **Dev Tools:** Hot reload, ESLint, Prettier
+- **Dev Tools:** Hot reload, Biome (linting + formatting)
 
 ## Quick Start
 
