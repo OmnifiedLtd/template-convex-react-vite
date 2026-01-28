@@ -1,5 +1,4 @@
 import { useAuthActions } from "@convex-dev/auth/react"
-import * as Sentry from "@sentry/react"
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react"
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -65,12 +64,6 @@ function SignInForm() {
 
     try {
       console.log("[Auth Debug] Sending OTP to:", email)
-      Sentry.addBreadcrumb({
-        category: "auth",
-        message: "Sending OTP",
-        level: "info",
-        data: { email },
-      })
 
       // Call signIn with FormData to trigger OTP send
       await signIn("resend-otp", formData)
@@ -80,9 +73,6 @@ function SignInForm() {
       setStep({ email })
     } catch (err) {
       console.error("[Auth Debug] Failed to send OTP:", err)
-      Sentry.captureException(err, {
-        extra: { email, step: "send-otp" },
-      })
       setError("Failed to send verification code. Please try again.")
     } finally {
       setIsSubmitting(false)
@@ -99,11 +89,6 @@ function SignInForm() {
 
     try {
       console.log("[Auth Debug] Verifying OTP code")
-      Sentry.addBreadcrumb({
-        category: "auth",
-        message: "Verifying OTP",
-        level: "info",
-      })
 
       // Call signIn with FormData containing email and code
       const result = await signIn("resend-otp", formData)
@@ -114,9 +99,6 @@ function SignInForm() {
       // when auth state updates
     } catch (err) {
       console.error("[Auth Debug] Failed to verify OTP:", err)
-      Sentry.captureException(err, {
-        extra: { step: "verify-otp" },
-      })
       setError("Invalid or expired code. Please try again.")
       setIsSubmitting(false)
     }
@@ -267,12 +249,6 @@ function AuthenticatedRedirect() {
 
   useEffect(() => {
     console.log("[Auth Debug] User authenticated, redirecting to:", from)
-    Sentry.addBreadcrumb({
-      category: "auth",
-      message: "Authenticated, redirecting",
-      level: "info",
-      data: { returnTo: from },
-    })
     navigate(from, { replace: true })
   }, [navigate, from])
 
